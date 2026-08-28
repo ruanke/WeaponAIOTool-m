@@ -13,7 +13,7 @@ on:
         default: true
 
 permissions:
-  contents: write   # 创建 Release 所需
+  contents: write
 
 jobs:
   build:
@@ -42,6 +42,18 @@ jobs:
           cd _sourceCode
           python build.py
 
+      # ===== 关键：调试步骤，确认文件存在 =====
+      - name: 列出构建产物
+        run: |
+          cd _sourceCode
+          echo "=== Final Build 目录内容 ==="
+          dir "Final Build" 2>nul || echo "Final Build 目录不存在"
+          echo "=== dist 目录内容 ==="
+          dir "dist" 2>nul || echo "dist 目录不存在"
+          echo "=== 当前目录所有 exe ==="
+          dir /s *.exe
+        shell: cmd
+
       - name: 确定版本号
         id: version
         shell: pwsh
@@ -52,11 +64,16 @@ jobs:
           }
           echo "version=$ver" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
+      # ===== 上传：使用更宽松的路径 + 如果找不到则报错 =====
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
           name: WeaponAIOTool-${{ steps.version.outputs.version }}
-          path: _sourceCode/Final Build/WeaponAIOTool.exe
+          path: |
+            _sourceCode/Final Build/WeaponAIOTool.exe
+            _sourceCode/FinalBuild/WeaponAIOTool.exe
+            _sourceCode/dist/WeaponAIOTool.exe
+          if-no-files-found: error   # 找不到文件时让 workflow 失败，而不是静默跳过[reference:3]
 
   release:
     name: 创建 Release 并上传附件
