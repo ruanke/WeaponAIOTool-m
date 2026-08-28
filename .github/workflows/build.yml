@@ -1,79 +1,95 @@
-name: Manual Build and Auto-Release
+name: 手动构建并自动发布
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: '版本号（例如 v1.2.3）'
+        description: '版本号（例如 v1.0.0，留空则自动生成时间戳）'
         required: false
-        default: 'pre-release'
+        default: ''
       prerelease:
-        description: '是否为预发布版'
+        description: '标记为预发布版'
         type: boolean
         default: true
 
+# 关键：授予写入权限以创建 Release
+permissions:
+  contents: write
+
 jobs:
   build:
+    name: 构建 Windows 可执行文件
     runs-on: windows-latest
-    outputs:
-      version: ${{ steps.set-version.outputs.version }}
+
     steps:
-      - name: Checkout code
+      - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: 设置 Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install dependencies
+      - name: 安装依赖
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller
+          if (Test-Path requirements.txt) {
+            pip install -r requirements.txt
+          } else {
+            pip install pyinstaller customtkinter
+          }
 
-      - name: Build with PyInstaller
+      - name: 构建主程序
         run: |
           cd _sourceCode
-          pyinstaller --onefile --windowed --name "WeaponAIOTool" --add-data "resources;resources" weaponAIO.py
-
-      - name: Set version output
-        id: set-version
-        run: |
-          if ("${{ github.event.inputs.version }}" -eq "pre-release") {
-            $ver = "pre-release-$(Get-Date -Format 'yyyyMMdd-HHmm')"
-          } else {
-            $ver = "${{ github.event.inputs.version }}"
+          $iconArg = ""
+          if (Test-Path icon.ico) {
+            $iconArg = "--icon=icon.ico"
           }
-          echo "version=$ver" >> $env:GITHUB_OUTPUT
+          pyinstaller --onefile --windowed --name "WeaponAIOTool" --add-data "resources;resources" $iconArg weaponAIO.py
 
-      - name: Upload artifact (for release)
+      - name: 确定版本号
+        id: version
+        shell: pwsh
+        run: |
+          $ver = "${{ github.event.inputs.version }}"
+          if ([string]::IsNullOrWhiteSpace($ver)) {
+            $ver = "pre-release-$(Get-Date -Format 'yyyyMMdd-HHmm')"
+          }
+          echo "version=$ver" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: WeaponAIOTool-${{ steps.set-version.outputs.version }}
+          name: WeaponAIOTool-${{ steps.version.outputs.version }}
           path: _sourceCode/dist/WeaponAIOTool.exe
 
   release:
+    name: 创建 Release 并上传附件
     needs: build
     runs-on: ubuntu-latest
-    if: needs.build.outputs.version != 'pre-release-*'   # 即使为预发布也创建，但可调整
+    if: github.event.inputs.version != ''
+    permissions:
+      contents: write  # 确保有写入权限
+
     steps:
-      - name: Download artifact
+      - name: 下载构建产物
         uses: actions/download-artifact@v4
         with:
           name: WeaponAIOTool-${{ needs.build.outputs.version }}
-          path: .
 
-      - name: Create Release
+      - name: 创建 Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ needs.build.outputs.version }}
-          name: Release ${{ needs.build.outputs.version }}
+          name: "WeaponAIOTool ${{ needs.build.outputs.version }}"
           body: |
-            手动构建版本 ${{ needs.build.outputs.version }}
-            触发者：${{ github.actor }}
+            手动触发的构建版本：${{ needs.build.outputs.version }}
+            触发人：${{ github.actor }}
+            触发时间：${{ github.event.repository.updated_at }}
           files: WeaponAIOTool.exe
-          prerelease: ${{ github.event.inputs.prerelease }}
+          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+          draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
