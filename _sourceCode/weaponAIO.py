@@ -1,18 +1,11 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-
-application_path = ''
-if getattr(sys, 'frozen', False):
-    application_path = sys._MEIPASS
-else:
-    application_path = os.path.dirname(os.path.abspath(__file__))
-
-import tkinter
 import threading
+import subprocess
+import tkinter
 from tkinter import messagebox
 import customtkinter as ctk
-import subprocess
 
 ctk.set_appearance_mode("System")
 ctk.set_default_color_theme("blue")
@@ -33,7 +26,7 @@ class App(ctk.CTk):
         self.sidebar_frame.grid_rowconfigure(0, weight=1)
         self.step_buttons = []
 
-        # ---------- 步骤说明（全部中文） ----------
+        # ---------- 步骤说明（全中文） ----------
         self.steps = {
             "主菜单": """
 欢迎使用塔科夫武器一体化工具！
@@ -257,7 +250,6 @@ WTT 团队自豪地为您呈现这款《逃离塔科夫》高级武器模组制�
         self.bottom_frame.grid_rowconfigure(0, weight=1)
         self.bottom_frame.grid_columnconfigure(0, weight=1)
 
-        # 默认显示主菜单
         self.set_step_text("主菜单")
 
     # ---------- 事件处理 ----------
@@ -304,9 +296,8 @@ WTT 团队自豪地为您呈现这款《逃离塔科夫》高级武器模组制�
         self.textbox.insert("0.0", step_text, "custom")
         self.textbox.configure(state="disabled")
 
-    # ---------- 获取脚本路径（适配开发/打包） ----------
+    # ---------- 获取脚本路径 ----------
     def get_script_path(self, step):
-        # 判断是否打包
         if getattr(sys, 'frozen', False):
             base_path = sys._MEIPASS
             ext = ".exe"
@@ -314,7 +305,6 @@ WTT 团队自豪地为您呈现这款《逃离塔科夫》高级武器模组制�
             base_path = os.path.dirname(os.path.abspath(__file__))
             ext = ".py"
 
-        # 步骤名 → 脚本名（不含扩展名）
         script_map = {
             "步骤 1：复制依赖文件": "filegrabber",
             "步骤 3：修复 GUID 引用": "scriptfix",
@@ -333,12 +323,9 @@ WTT 团队自豪地为您呈现这款《逃离塔科夫》高级武器模组制�
         def run_in_thread():
             try:
                 self.after(0, lambda: self.run_script_button.configure(state="disabled", text="启动中..."))
-                # 根据环境选择运行方式
                 if getattr(sys, 'frozen', False):
-                    # 打包后直接运行 .exe
-                    process = subprocess.Popen([script_path])
+                    process = subprocess.Popen([script_path], shell=True)
                 else:
-                    # 开发环境用 Python 运行 .py
                     process = subprocess.Popen([sys.executable, script_path])
                 process.wait()
             except Exception as e:
@@ -357,8 +344,10 @@ WTT 团队自豪地为您呈现这款《逃离塔科夫》高级武器模组制�
             if script_path and os.path.exists(script_path):
                 threading.Thread(target=run_in_thread, daemon=True).start()
             else:
-                messagebox.showinfo("脚本未找到",
-                    f"当前步骤 {self.current_step} 没有关联的脚本。")
+                messagebox.showinfo(
+                    "脚本未找到",
+                    f"当前步骤 {self.current_step} 没有关联的脚本。\n\n搜索路径：\n{script_path if script_path else '未定义'}"
+                )
 
 if __name__ == "__main__":
     app = App()

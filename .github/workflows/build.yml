@@ -12,15 +12,13 @@ on:
         type: boolean
         default: true
 
-# 关键：授予写入权限以创建 Release
 permissions:
-  contents: write
+  contents: write   # 创建 Release 所需
 
 jobs:
   build:
     name: 构建 Windows 可执行文件
     runs-on: windows-latest
-    # 关键：将版本号输出，供后续任务使用
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -39,10 +37,10 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: 构建主程序
+      - name: 构建（使用 build.py）
         run: |
           cd _sourceCode
-          pyinstaller --onefile --windowed --name "WeaponAIOTool" --add-data "resources;resources" weaponAIO.py
+          python build.py
 
       - name: 确定版本号
         id: version
@@ -54,12 +52,11 @@ jobs:
           }
           echo "version=$ver" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
-      # 关键：上传 Artifact，名称与下载时一致
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
           name: WeaponAIOTool-${{ steps.version.outputs.version }}
-          path: _sourceCode/dist/WeaponAIOTool.exe
+          path: _sourceCode/Final Build/WeaponAIOTool.exe
 
   release:
     name: 创建 Release 并上传附件
@@ -67,7 +64,6 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.inputs.version != ''
     steps:
-      # 关键：下载 Artifact，名称与上传时完全一致
       - name: 下载构建产物
         uses: actions/download-artifact@v4
         with:

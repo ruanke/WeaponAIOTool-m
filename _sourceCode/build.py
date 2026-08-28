@@ -36,8 +36,8 @@ def build_resources():
     temp_resources_dir = TEMP_DIR / "resources"
     temp_resources_dir.mkdir(parents=True, exist_ok=True)
 
-    # 复制预编译的二进制文件（如 SamSwat 的 LActionReplacer.exe）
-    binary_files = [SOURCE_DIR / "resources" / "LActionReplacer.exe"]
+    # 复制预编译的二进制文件（如 LActionReplacer.exe）
+    binary_files = [RESOURCES_DIR / "LActionReplacer.exe"]
     for binary in binary_files:
         if binary.exists():
             shutil.copy2(binary, temp_resources_dir / binary.name)
@@ -61,7 +61,6 @@ def build_resources():
                 "--workpath", str(TEMP_DIR / "build"),
                 str(script)
             ]
-            # 添加图标（若存在）
             icon_path = SOURCE_DIR / "icon.ico"
             if icon_path.exists():
                 cmd.insert(cmd.index("--clean") + 1, "--icon")
@@ -76,13 +75,18 @@ def build_resources():
 
 def build_main_app():
     print("正在构建主应用程序...")
+    temp_resources_dir = TEMP_DIR / "resources"
+    if not temp_resources_dir.exists() or not any(temp_resources_dir.glob("*.exe")):
+        print("错误: 未找到辅助 EXE，请先运行 build_resources()。")
+        sys.exit(1)
+
     cmd = [
         "pyinstaller",
         "--noconfirm",
         "--onefile",
         "--windowed",
         "--hidden-import", "customtkinter",
-        "--add-data", f"{str(TEMP_DIR / 'resources')}{os.pathsep}resources",
+        "--add-data", f"{str(temp_resources_dir)}{os.pathsep}resources",
         "--add-data", f"{CUSTOMTKINTER_PATH}{os.pathsep}customtkinter",
         "--distpath", str(FINAL_DIR),
         "--workpath", str(TEMP_DIR / "build"),
