@@ -5,7 +5,6 @@ import sys
 from pathlib import Path
 import site
 
-# ---------- dynamically get customtkinter path ----------
 def get_customtkinter_path():
     try:
         import customtkinter
@@ -19,11 +18,10 @@ def get_customtkinter_path():
 
 CUSTOMTKINTER_PATH = get_customtkinter_path()
 
-# ---------- path config ----------
 SOURCE_DIR = Path(__file__).resolve().parent
 RESOURCES_DIR = SOURCE_DIR / "resources"
 TEMP_DIR = Path.cwd() / "temp"
-FINAL_DIR = Path.cwd() / "FinalBuild"   # 使用无空格目录名，避免路径问题
+FINAL_DIR = Path.cwd() / "FinalBuild"
 
 def should_build(py_file, exe_file):
     if not exe_file.exists():
@@ -36,7 +34,6 @@ def build_resources():
     temp_resources_dir = TEMP_DIR / "resources"
     temp_resources_dir.mkdir(parents=True, exist_ok=True)
 
-    # copy pre-built binaries (like LActionReplacer.exe)
     binary_files = [RESOURCES_DIR / "LActionReplacer.exe"]
     for binary in binary_files:
         if binary.exists():
@@ -45,7 +42,6 @@ def build_resources():
         else:
             print(f"Warning: missing {binary}")
 
-    # build each .py script to .exe
     for script in resource_files:
         exe_file = temp_resources_dir / (script.stem + ".exe")
         if should_build(script, exe_file):
@@ -87,6 +83,7 @@ def build_main_app():
         "--noconfirm",
         "--onefile",
         "--windowed",
+        "--name", "WeaponAIOTool",          # <--- 关键修复
         "--hidden-import", "customtkinter",
         "--add-data", f"{str(temp_resources_dir)}{os.pathsep}resources",
         "--add-data", f"{CUSTOMTKINTER_PATH}{os.pathsep}customtkinter",
