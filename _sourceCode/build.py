@@ -23,7 +23,7 @@ CUSTOMTKINTER_PATH = get_customtkinter_path()
 SOURCE_DIR = Path(__file__).resolve().parent
 RESOURCES_DIR = SOURCE_DIR / "resources"
 TEMP_DIR = Path.cwd() / "temp"
-FINAL_DIR = Path.cwd() / "Final Build"
+FINAL_DIR = Path.cwd() / "FinalBuild"   # 使用无空格目录名，避免路径问题
 
 def should_build(py_file, exe_file):
     if not exe_file.exists():
@@ -66,9 +66,11 @@ def build_resources():
                 cmd.insert(cmd.index("--clean") + 1, "--icon")
                 cmd.insert(cmd.index("--clean") + 2, str(icon_path))
             try:
-                subprocess.run(cmd, check=True)
+                subprocess.run(cmd, check=True, capture_output=True, text=True)
             except subprocess.CalledProcessError as e:
                 print(f"Failed to build {script.name}: {e}")
+                print("STDOUT:", e.stdout)
+                print("STDERR:", e.stderr)
                 raise
         else:
             print(f"Skipping {script.name}, already up to date.")
@@ -97,9 +99,11 @@ def build_main_app():
         cmd.insert(cmd.index("--windowed") + 1, "--icon")
         cmd.insert(cmd.index("--windowed") + 2, str(icon_path))
     try:
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
         print(f"Failed to build main app: {e}")
+        print("STDOUT:", e.stdout)
+        print("STDERR:", e.stderr)
         raise
 
 def main():

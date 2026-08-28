@@ -17,66 +17,40 @@ permissions:
 
 jobs:
   build:
-    name: 构建 Windows 可执行文件
     runs-on: windows-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
-
       - name: 设置 Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
-
       - name: 安装依赖
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
-
       - name: 构建（使用 build.py）
         run: |
           cd _sourceCode
           python build.py
-
-      # ===== 关键：调试步骤，确认文件存在 =====
-      - name: 列出构建产物
-        run: |
-          cd _sourceCode
-          echo "=== Final Build 目录内容 ==="
-          dir "Final Build" 2>nul || echo "Final Build 目录不存在"
-          echo "=== dist 目录内容 ==="
-          dir "dist" 2>nul || echo "dist 目录不存在"
-          echo "=== 当前目录所有 exe ==="
-          dir /s *.exe
-        shell: cmd
-
       - name: 确定版本号
         id: version
         shell: pwsh
         run: |
           $ver = "${{ github.event.inputs.version }}"
-          if ([string]::IsNullOrWhiteSpace($ver)) {
-            $ver = "pre-release-$(Get-Date -Format 'yyyyMMdd-HHmm')"
-          }
+          if ([string]::IsNullOrWhiteSpace($ver)) { $ver = "pre-release-$(Get-Date -Format 'yyyyMMdd-HHmm')" }
           echo "version=$ver" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-
-      # ===== 上传：使用更宽松的路径 + 如果找不到则报错 =====
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
           name: WeaponAIOTool-${{ steps.version.outputs.version }}
-          path: |
-            _sourceCode/Final Build/WeaponAIOTool.exe
-            _sourceCode/FinalBuild/WeaponAIOTool.exe
-            _sourceCode/dist/WeaponAIOTool.exe
-          if-no-files-found: error   # 找不到文件时让 workflow 失败，而不是静默跳过[reference:3]
-
+          path: _sourceCode/FinalBuild/WeaponAIOTool.exe
+          if-no-files-found: error
   release:
-    name: 创建 Release 并上传附件
     needs: build
     runs-on: ubuntu-latest
     if: github.event.inputs.version != ''
@@ -85,7 +59,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: WeaponAIOTool-${{ needs.build.outputs.version }}
-
       - name: 创建 Release
         uses: softprops/action-gh-release@v1
         with:
