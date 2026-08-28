@@ -14,7 +14,6 @@ import tkinter as tk
 import customtkinter as ctk
 from tkinter import filedialog
 
-# ==================== 黑名单 ====================
 BLACKLIST = [
     "cubemaps",
     "shaders",
@@ -37,24 +36,20 @@ class TarkovFileCopyTool(ctk.CTk):
         self.geometry("1000x800")
         self.windows_data = None
 
-        # ========== 左侧面板 ==========
         left_frame = ctk.CTkFrame(self)
         left_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
-        # EFT 文件夹
         ctk.CTkLabel(left_frame, text="选择 EFT 游戏文件夹：").pack()
         self.eft_folder_entry = ctk.CTkEntry(left_frame, width=300)
         self.eft_folder_entry.pack(pady=5)
         ctk.CTkButton(left_frame, text="浏览...", command=self.browse_eft_folder).pack(pady=5)
 
-        # 导出文件夹
         ctk.CTkLabel(left_frame, text="选择导出文件夹：").pack()
         self.export_folder_entry = ctk.CTkEntry(left_frame, width=300)
         self.export_folder_entry.pack(pady=5)
         ctk.CTkButton(left_frame, text="浏览...", command=self.browse_export_folder).pack(pady=5)
 
-        # ---------- 新增：手动输入 Bundle 名称 ----------
-        ctk.CTkLabel(left_frame, text="或手动输入 Bundle 名称（每行一个）：").pack(pady=(10,0))
+        ctk.CTkLabel(left_frame, text="手动输入 Bundle 名称（每行一个）：").pack(pady=(10,0))
         self.input_textbox = ctk.CTkTextbox(left_frame, height=100, width=300)
         self.input_textbox.pack(pady=5, fill="x")
 
@@ -63,13 +58,11 @@ class TarkovFileCopyTool(ctk.CTk):
         )
         self.export_input_button.pack(pady=5)
 
-        # 原有选择导出的按钮（从列表框选中）
         self.copy_button = ctk.CTkButton(
             left_frame, text="导出选中的 Bundle", command=self.copy_selected_bundle, state="disabled"
         )
         self.copy_button.pack(pady=10)
 
-        # ========== 右侧面板 ==========
         right_frame = ctk.CTkFrame(self)
         right_frame.pack(side="right", fill="both", expand=True, padx=10, pady=10)
 
@@ -87,11 +80,9 @@ class TarkovFileCopyTool(ctk.CTk):
         self.bundle_listbox.pack(fill="both", expand=True)
         self.bundle_listbox.bind("<<ListboxSelect>>", self.on_bundle_select)
 
-        # 日志框
         self.logging_text = ctk.CTkTextbox(right_frame, height=200, state="disabled")
         self.logging_text.pack(fill="x", expand=False, pady=5)
 
-        # 配置文件
         self.config_path = os.path.join(os.path.curdir, "WeaponAIOTool_Paths.json")
         self.load_config()
 
@@ -175,55 +166,40 @@ class TarkovFileCopyTool(ctk.CTk):
         else:
             self.copy_button.configure(state="disabled")
 
-    # ---------- 原有：从列表框选中导出 ----------
     def copy_selected_bundle(self):
         selected_indices = self.bundle_listbox.curselection()
         if not selected_indices:
             self.log("没有选中任何 Bundle。")
             return
-
-        export_folder = self.export_folder_entry.get()
-        eft_folder = self.eft_folder_entry.get()
-        if not export_folder or not eft_folder:
-            self.log("错误：请先选择 EFT 文件夹和导出文件夹。")
-            return
-
         selected_bundles = [self.bundle_listbox.get(idx) for idx in selected_indices]
         self._export_bundles(selected_bundles)
 
-    # ---------- 新增：从文本输入框导出 ----------
+    # ===== 修改后的导出输入方法（不再拆分逗号） =====
     def export_from_input(self):
         raw_text = self.input_textbox.get("0.0", "end").strip()
         if not raw_text:
             self.log("请输入至少一个 Bundle 名称。")
             return
 
-        # 按换行、逗号、空格分割
-        # 先按换行分割，再按逗号/空格分割，并过滤空字符串
-        lines = raw_text.splitlines()
+        # 按行分割，每行作为独立名称
         names = []
-        for line in lines:
-            # 按逗号分割
-            parts = line.split(',')
-            for part in parts:
-                # 按空格分割（处理多个空格）
-                for name in part.split():
-                    clean = name.strip()
-                    if clean:
-                        names.append(clean)
+        for line in raw_text.splitlines():
+            line = line.strip()
+            if line:
+                names.append(line)
 
+        # 去重
+        names = list(dict.fromkeys(names))
         if not names:
             self.log("未解析出有效的 Bundle 名称。")
             return
 
-        # 去重
-        names = list(dict.fromkeys(names))  # 保持顺序去重
-        self.log(f"解析到 {len(names)} 个 Bundle：{', '.join(names)}")
+        self.log(f"解析到 {len(names)} 个 Bundle：")
+        for name in names:
+            self.log(f"  - {name}")
         self._export_bundles(names)
 
-    # ---------- 核心导出逻辑（共用） ----------
     def _export_bundles(self, bundle_names):
-        """传入一个 bundle 名称列表，导出所有依赖"""
         export_folder = self.export_folder_entry.get()
         eft_folder = self.eft_folder_entry.get()
         if not export_folder or not eft_folder:
@@ -234,7 +210,6 @@ class TarkovFileCopyTool(ctk.CTk):
             self.log("错误：尚未加载 windows.json，请检查 EFT 文件夹。")
             return
 
-        # 收集依赖
         all_deps = set()
         invalid = []
         for name in bundle_names:
@@ -247,10 +222,13 @@ class TarkovFileCopyTool(ctk.CTk):
             all_deps.add(name)
 
         if invalid:
-            self.log(f"警告：以下名称不在 windows.json 中，已跳过：{', '.join(invalid)}")
+            self.log(f"警告：以下 {len(invalid)} 个名称不在 windows.json 中，已跳过：")
+            for name in invalid:
+                self.log(f"  - {name}")
+            self.log("提示：请从右侧列表中选择正确的名称，或确保名称完整且格式正确。")
 
         if not all_deps:
-            self.log("没有需要导出的文件（所有依赖均在黑名单中或无有效 Bundle）。")
+            self.log("没有需要导出的文件。")
             return
 
         total = len(all_deps)
