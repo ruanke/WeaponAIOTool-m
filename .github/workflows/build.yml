@@ -1,0 +1,79 @@
+name: Manual Build and Auto-Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号（例如 v1.2.3）'
+        required: false
+        default: 'pre-release'
+      prerelease:
+        description: '是否为预发布版'
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.set-version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: |
+          cd _sourceCode
+          pyinstaller --onefile --windowed --name "WeaponAIOTool" --add-data "resources;resources" weaponAIO.py
+
+      - name: Set version output
+        id: set-version
+        run: |
+          if ("${{ github.event.inputs.version }}" -eq "pre-release") {
+            $ver = "pre-release-$(Get-Date -Format 'yyyyMMdd-HHmm')"
+          } else {
+            $ver = "${{ github.event.inputs.version }}"
+          }
+          echo "version=$ver" >> $env:GITHUB_OUTPUT
+
+      - name: Upload artifact (for release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: WeaponAIOTool-${{ steps.set-version.outputs.version }}
+          path: _sourceCode/dist/WeaponAIOTool.exe
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: needs.build.outputs.version != 'pre-release-*'   # 即使为预发布也创建，但可调整
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: WeaponAIOTool-${{ needs.build.outputs.version }}
+          path: .
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.build.outputs.version }}
+          name: Release ${{ needs.build.outputs.version }}
+          body: |
+            手动构建版本 ${{ needs.build.outputs.version }}
+            触发者：${{ github.actor }}
+          files: WeaponAIOTool.exe
+          prerelease: ${{ github.event.inputs.prerelease }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

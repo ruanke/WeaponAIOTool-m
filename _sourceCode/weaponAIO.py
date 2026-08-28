@@ -1,18 +1,11 @@
-# imports necessary to get the path where the files are extracted in
+# -*- coding: utf-8 -*-
 import os
 import sys
 
-# initializing a variable containing the path where application files are stored.
 application_path = ''
-
-# attempting to get where the program files are stored
 if getattr(sys, 'frozen', False):
-    # if program was frozen (compiled) using pyinstaller, the pyinstaller bootloader creates a sys attribute
-    # frozen=True to indicate that the script file was compiled using pyinstaller, then it creates a
-    # constant in sys that points to the directory where program executable is (where program files are extracted in).
     application_path = sys._MEIPASS
 else:
-    # if program is not frozen (compiled) using pyinstaller and is running normally like a Python 3.x.x file.
     application_path = os.path.dirname(os.path.abspath(__file__))
 
 import tkinter
@@ -21,352 +14,352 @@ from tkinter import messagebox
 import customtkinter as ctk
 import subprocess
 
-# Set the appearance mode and default color theme using customtkinter
 ctk.set_appearance_mode("System")
 ctk.set_default_color_theme("blue")
 
-# Create the main application class
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("WeaponAIOTool")
+        self.title("武器 AIO 工具（WeaponAIOTool）")
         self.geometry("1350x750")
 
-        # Configure grid weights for resizing
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=75)
         self.grid_rowconfigure(0, weight=1)
 
-        # Create the sidebar frame
+        # ---------- 侧边栏 ----------
         self.sidebar_frame = ctk.CTkFrame(self, width=140, corner_radius=0)
         self.sidebar_frame.grid(row=0, column=0, padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.sidebar_frame.grid_rowconfigure(0, weight=1)
-        self.step_buttons = []  # Define step_buttons list at the class level
-        # Define the steps (instructions) for the tool
-        self.steps = {
-"Main Menu": """
-Welcome to Tarkov Presents: The Weapon AIO Tool!
+        self.step_buttons = []
 
-The WTT Team proudly presents our all-in-one tool/tutorial for Escape From Tarkov advanced weapon modding! Follow our step-by-step instructions to effortlessly streamline your weapon creation workflow. This guide aims to cover almost every process, from Asset Ripper, to AssetStudioGui, to Unity, and finally to Tarkov! From weapon ripping to final testing, we've got you covered.
-To follow along with this guide, you will need the following:
+        # ---------- 步骤说明（全部中文） ----------
+        self.steps = {
+            "主菜单": """
+欢迎使用塔科夫武器一体化工具！
+
+WTT 团队自豪地为您呈现这款《逃离塔科夫》高级武器模组制作的一体化工具/教程。
+请按照我们的分步说明，轻松简化您的武器制作流程。本指南几乎涵盖了从 Asset Ripper、AssetStudioGUI、Unity 到最终导入塔科夫的全部过程 —— 从武器提取到最终测试，我们为您考虑周全。
+
+要跟随本指南，您需要准备以下工具：
     - Unity 2019.4.39f1
-    - Escape From Tarkov SDK
+    - 《逃离塔科夫》SDK 项目
     - Asset Ripper
     - Blender
     - Asset Studio GUI
-    - Your choice of text editor that has formatting for .json (VSCode, VSCodium, etc)
-    - .NET Framework for LActionReplacer.exe
+    - 支持 .json 格式化的文本编辑器（如 VSCode、VSCodium 等）
+    - 运行 LActionReplacer.exe 所需的 .NET Framework
 
+本工具深深感谢 SamSwat、SSH 和 Choccy 等杰出人士，他们提供的工具、信息和知识帮助我们走过了这段旅程。特别感谢 WTT 的 Tron，在探索过程中帮我抓住了最后一丝理智。
 
-This tool owes a big debt of gratitude to the fantastic minds of SamSwat, SSH, and Choccy, for providing the tools, info, and knowhow to help navigate this process. Special recognition to WTT's Tron, who helped hold onto my last remaining shreds of sanity while we ventured through this process.
-Now, best of luck! This process is about as straightforward as herding caffeinated cats, but fear not! This guide's here to try and make your modding mayhem a tad more manageable.
+祝您好运！这个过程就像指挥一群喝了咖啡的猫一样直接，但别怕！本指南会尽量让您的模组制作混乱变得可控一些。
 
-            - Crafted with questionable sanity by GrooveypenguinX
+            —— 由 GrooveypenguinX 在可疑的理智状态下打造
 """,
-"Step 1: Copy Dependencies": """
-                                                            **Description:**
-In this step, you'll copy the weapon you are basing your custom weapon off of, and all it's dependencies from Escape From Tarkov's game files to your specified directory.
-                                                            **Instructions:**
-1. Run the attached 'filegrabber' script.
-2. Select your main EFT/SPT install folder. It should contain the EscapeFromTarkov.exe.
-3. Select your export folder where you want the bundles to be exported to.
-4. The windows.json will automatically be loaded, and all of the game's bundles will be displayed on the right.
-5. Search for your desired weapon container, double click on it to highlight it (or just highlight it).
-5. Click the 'Copy Selected Bundle' button to initiate the copying process.
+            "步骤 1：复制依赖文件": """
+                                                            **说明：**
+在此步骤中，您将从《逃离塔科夫》游戏文件中复制您自定义武器所基于的原版武器及其所有依赖项，到您指定的目录。
+                                                            **操作：**
+1. 运行附带的 'filegrabber' 脚本（点击下方按钮）。
+2. 选择您的 EFT/SPT 主安装文件夹（应包含 EscapeFromTarkov.exe）。
+3. 选择导出文件夹，用于存放导出的资源包。
+4. 程序会自动加载 windows.json，右侧会显示游戏的所有资源包列表。
+5. 搜索您需要的武器容器，在列表中选中它（支持多选）。
+6. 点击“复制选中的 Bundle”按钮开始复制。
 """,
-"Step 2: Convert Bundles": """
-                                                            **Description:** 
-In this step, you'll convert bundles to Unity format using Asset Ripper.
-                                                            **Instructions:**
-1. Drag the entire exported folders from Step 1 into Asset Ripper.
-2. Export all assets to your specified export directory.
+            "步骤 2：转换资源包（Asset Ripper）": """
+                                                            **说明：**
+此步骤使用 Asset Ripper 将资源包转换为 Unity 格式。
+                                                            **操作：**
+1. 将步骤 1 导出的整个文件夹拖入 Asset Ripper。
+2. 将所有资源导出到您指定的目录。
 """,
-"Step 3: Fix GUID References": """
-                                                            **Description:** 
-In this step, you'll fix all script GUID references to ensure your Unity project uses the correct SDK scripts.
-                                                            **Instructions:**
-1. Run the provided 'scriptfix' script to update script GUID references in your project.
-2. Fill in the required inputs within the script's GUI:
-- Exported project's "Assets" folder: The "assets" directory of your weapon you exported from Asset Ripper in Step 2.
-- Escape From Tarkov SDK Path: The path to your install of the EFT SDK Unity project. It should contain Assets, Library, Packages, etc.
-3. Click "Fix Script GUIDs" button to process your files.
-4. After successfully patching the GUIDs with 'scriptfix', delete the "Scripts" folder from your exported weapon project, as it's no longer needed and causes Unity errors if you try to import it.
+            "步骤 3：修复 GUID 引用": """
+                                                            **说明：**
+此步骤修复所有脚本的 GUID 引用，确保您的 Unity 项目使用正确的 SDK 脚本。
+                                                            **操作：**
+1. 运行提供的 'scriptfix' 脚本。
+2. 在脚本 GUI 中填写所需输入：
+   - 导出项目的“Assets”文件夹：即步骤 2 中 Asset Ripper 导出的武器“assets”目录。
+   - 《逃离塔科夫》SDK 路径：您的 EFT SDK Unity 项目所在目录（应包含 Assets、Library、Packages 等）。
+3. 点击“修复脚本 GUID”按钮处理文件。
+4. GUID 修补成功后，请删除导出武器项目中的“Scripts”文件夹，因为它已不再需要，且导入 Unity 时会引发错误。
 """,
-"Step 4: Import to Unity": """
-                                                            **Description:** 
-In this step, you'll import your exported weapon into Unity.
-                                                            **Instructions:**
-1. Rename the main 'Assets' folder from the weapon you exported from AssetRipper in Step 2 to match the name of the item you're working on.
-2. Import the Folder into Unity while preserving the folder structure and organization.
+            "步骤 4：导入 Unity": """
+                                                            **说明：**
+此步骤将导出的武器导入 Unity。
+                                                            **操作：**
+1. 将步骤 2 中 AssetRipper 导出的主“Assets”文件夹重命名为您正在制作的物品名称。
+2. 将文件夹导入 Unity，并保持目录结构不变。
 """,
-"Step 5: Handling Audio": """
-                                                            **Description:** 
-In this step, you'll handle all audio assets, fixing any broken audio files caused by Asset Ripper.
-                                                            **Instructions:**
-1. Open the export folder containing the weapon container .bundle and dependencies from Step 1.
-2. Export all AudioClip files from every file using Asset Studio GUI. NOTE: not every file is a .bundle. There is a 'generic' file with no extension that contains lots of shared audio.
-3. Create a new folder, and place all the 'working audio' files in the same folder.
-4. Run the provided 'audiofix' script to identify all the working and broken audio files and automatically replace the broken files while updating their .meta extension (if necessary).
-5. Go through all your audio bank files (typically located in Assets/Content/Weapons/Audio/). Under Blend Options, replace the missing field with the SDK's 'Standart' DistanceBlendOption. (yes, 'Standart'. Not a typo.)
+            "步骤 5：处理音频": """
+                                                            **说明：**
+此步骤处理所有音频资源，修复 Asset Ripper 造成的损坏音频文件。
+                                                            **操作：**
+1. 打开步骤 1 中存放武器容器 .bundle 及其依赖的导出文件夹。
+2. 使用 Asset Studio GUI 从每个文件中导出所有 AudioClip。注意：并非所有文件都是 .bundle，有一个无扩展名的“generic”文件包含许多共享音频。
+3. 新建一个文件夹，将所有“工作正常”的音频文件放入其中。
+4. 运行提供的 'audiofix' 脚本，它会自动识别正常和损坏的音频文件，并替换损坏的文件，同时更新 .meta 文件（如有必要）。
+5. 检查所有音频库文件（通常位于 Assets/Content/Weapons/Audio/）。在 Blend Options 下，将缺失的字段替换为 SDK 中的 'Standart' DistanceBlendOption（是的，是 'Standart'，不是拼写错误）。
 """,
-"Step 6: Fixing Animations Part 1 (AssetStudioGUI)": """
-                                                            **Description:** 
-In this step, you'll export working animations from AssetStudioGUI for use in the next step.
-                                                            **Instructions:**
-1. Open the export folder containing the weapon container .bundle and dependencies from Step 1.
-2. Import the 'client_assets.bundle' for the weapon container you are working on into AssetStudioGui.
-3. In the 'Options' menu, ensure 'Display all assets' is checked.
-4. In the 'Filter Type' menu, select 'Animator', 'AnimationClip', and 'Avatar'.
-5. Find the avatar with the largest 'int size' in the list. This is USUALLY the correct avatar for exporting proper animations.
-6. Select all the AnimationClips, the Avatar, and the matching Animator. Right-click and choose 'Export Animator + selected Animations'.
+            "步骤 6：修复动画（第 1 部分 – AssetStudioGUI）": """
+                                                            **说明：**
+此步骤使用 AssetStudioGUI 导出工作正常的动画，供下一步使用。
+                                                            **操作：**
+1. 打开步骤 1 中存放武器容器 .bundle 及其依赖的导出文件夹。
+2. 将您正在处理的武器容器的 'client_assets.bundle' 导入 AssetStudioGUI。
+3. 在 'Options' 菜单中，确保勾选 'Display all assets'。
+4. 在 'Filter Type' 菜单中，选择 'Animator'、'AnimationClip' 和 'Avatar'。
+5. 在列表中找到 'int size' 最大的 Avatar，这通常就是用于导出正确动画的 Avatar。
+6. 选中所有 AnimationClips、该 Avatar 以及对应的 Animator，右键选择 'Export Animator + selected Animations'。
 """,
-"Step 7: Fixing Animations Part 2 (Blender)": """
-                                                            **Description:** 
-In this step, you'll fix animations in Blender, resetting scale, origin, and cleaning up extra bones from AssetStudioGUI.
-                                                            **Instructions:**
-1. Import the FBX file into Blender you just created in Step 6.
-2. Reset the scale by pressing Alt + S. This will set the scale to 1.
-3. In Pose Mode, select the main bone in the armature, which is usually standing up vertically and named the same name as the weapon you exported.
-4. Set the 3D cursor to the main bone in the armature using Shift + S > 'Cursor to Selected'.
-5. In Object Mode, select the armature and set the origin to the 3D cursor using 'Object' > 'Origin' > 'Set Origin to 3D Cursor'.
-6. In Edit Mode, delete the main bone in the armature as it's not needed and may cause issues.
-7. In Object Mode, select ONLY the armature and reset all transforms using Alt + G. This will move the armature to the origin near 0 0 0.
-8. I recommend you make a backup of this file named WORKINGANIMATIONS_(yourweapon).blend, or something similar in case you need to go back to re-do animations or mesh edits.
-9. Customize this mesh in Blender to create your new custom gun. Be sure to pair the meshes to the proper bones in the armature.
-10. Save and export the new FBX into Unity with proper export settings. Ensure that 'Transform' > 'Apply Scaling' is set to 'FBX All,' and 'Armature' > 'Add Leaf Bones' is unchecked.
+            "步骤 7：修复动画（第 2 部分 – Blender）": """
+                                                            **说明：**
+此步骤在 Blender 中修复动画，重置缩放、原点，并清理 AssetStudioGUI 带来的多余骨骼。
+                                                            **操作：**
+1. 将步骤 6 中生成的 FBX 文件导入 Blender。
+2. 按 Alt+S 重置缩放（设为 1）。
+3. 进入姿态模式（Pose Mode），选择骨架中主要的骨骼（通常是垂直站立且与武器同名的那个）。
+4. 使用 Shift+S > 'Cursor to Selected' 将 3D 光标定位到该骨骼。
+5. 回到物体模式（Object Mode），选择骨架，通过 'Object' > 'Origin' > 'Set Origin to 3D Cursor' 将原点设置到 3D 光标。
+6. 进入编辑模式（Edit Mode），删除那根主要骨骼（不需要它，以免引起问题）。
+7. 在物体模式下，仅选择骨架，按 Alt+G 重置所有变换，将骨架移回原点附近。
+8. 建议将此文件备份为 WORKINGANIMATIONS_（您的武器名）.blend，以便需要重做动画或网格编辑时使用。
+9. 在 Blender 中自定义此网格以创建您的新自定义枪械。确保将网格正确绑定到骨架的对应骨骼。
+10. 保存并导出新 FBX 到 Unity，使用正确的导出设置。确保 'Transform' > 'Apply Scaling' 设为 'FBX All'，并取消勾选 'Armature' > 'Add Leaf Bones'。
 """,
-"Step 8: Fixing Animations Part 3 (Unity)": """
-                                                            **Description:** 
-In this step, you'll fix the weapon's animations in Unity, replacing the broken ones from Asset Ripper with your working ones from Step 7.
-                                                            **Instructions:**
-1. In Unity, locate your exported Tarkov weapon you imported in Step 4.
-2. Find the folder containing the weapon container, the controller, and .anim files. All the .anim files are currently broken from Asset Ripper.
-3. Create a new folder in Unity, and move all the 'broken' .anim files for your exported weapon to the new folder, and name it accordingly.
-4. NOTE: If you move these animations in Windows Explorer, also move their .meta files.
-5. If not already done, import the Working Animations FBX file from Step 7 into Unity.
-6. Select the working animations FBX file in Unity and under 'Inspector' > 'Rig' > 'Avatar Definition,' toggle it to 'Create from this model' and click 'Apply'.
-7. Duplicate all the working animations outside the FBX file by selecting all the animations in Unity (toggle open the .fbx with the arrow) and use CTRL + D to duplicate them into .anim files.
-8. Create a new folder in Unity, move all the new 'working' animation .anim files to the new folder and name it accordingly.
-9. NOTE: If you move these animations in Windows Explorer, also move their .meta files.
-10. Run the provided 'animrenamereplace' script, which helps automatically rename the working .anim files, compare the two directories for discrepancies, and replace the animations.
-11. The 'animrenamereplace' script renames animations from their exported blender names, and replaces 'broken' animations with working ones while retaining original .meta files. This keeps all the animations intact in the animator controller.
+            "步骤 8：修复动画（第 3 部分 – Unity）": """
+                                                            **说明：**
+此步骤在 Unity 中修复武器的动画，用步骤 7 中工作正常的动画替换 Asset Ripper 导出的损坏动画。
+                                                            **操作：**
+1. 在 Unity 中，找到您步骤 4 导入的塔科夫武器。
+2. 找到包含武器容器、控制器和 .anim 文件的文件夹。目前所有 .anim 文件都是从 Asset Ripper 带来的损坏版本。
+3. 在 Unity 中新建一个文件夹，将所有损坏的 .anim 文件移至该文件夹，并适当命名。
+4. 注意：如果在 Windows 资源管理器中移动这些动画，请同时移动它们的 .meta 文件。
+5. 如果尚未导入，请将步骤 7 中的工作动画 FBX 文件导入 Unity。
+6. 在 Unity 中选择该 FBX，在 Inspector > Rig > Avatar Definition 中，将其切换为 'Create from this model'，然后点击 Apply。
+7. 在 Unity 中复制所有工作动画（展开 .fbx 选择所有动画，按 Ctrl+D 复制成 .anim 文件）。
+8. 新建一个文件夹，将所有新生成的 'working' .anim 文件放入其中，并适当命名。
+9. 注意：如果在 Windows 资源管理器中移动这些动画，请同时移动它们的 .meta 文件。
+10. 运行提供的 'animrenamereplace' 脚本，它能自动重命名工作 .anim 文件，比较两个目录的差异并替换动画。
+11. 'animrenamereplace' 脚本会将 Blender 导出的动画名称重命名为匹配的格式，并用工作动画替换损坏动画，同时保留原始 .meta 文件，从而保持动画控制器中的所有动画完整。
 """,
-"Step 9: Left Hand Animations": """
-                                                            **Description:** 
-In this step, you'll update the left-hand animations in your Animator Controller with the SDK's animations using SamSWAT's LActionReplacer.
-                                                            **Instructions:**
-1. Use the attached 'lactionsfix' script to replace left-hand animations in your Animator Controller with the correct animations.
-2. Click the 'Browse Directory' button to select the directory where your Animator Controller is located.
-3. Once the directory is selected, click 'Run Script' to execute the replacement process.
-4. The 'lactionsfix' script automates the replacement of left-hand animations in your Animator Controller, ensuring that the correct animations are applied.
+            "步骤 9：左手动画": """
+                                                            **说明：**
+此步骤使用 SamSWAT 的 LActionReplacer 用 SDK 的动画更新动画控制器中的左手动画。
+                                                            **操作：**
+1. 使用附带的 'lactionsfix' 脚本替换动画控制器中的左手动画。
+2. 点击“浏览目录”按钮，选择您的动画控制器所在目录。
+3. 选择目录后，点击“运行脚本”执行替换。
+4. 'lactionsfix' 脚本会自动完成左手动画的替换，确保应用正确的动画。
 
-Shoutout to SamSwat for the LActionReplacer.exe that this script uses.
+特别感谢 SamSwat 提供的 LActionReplacer.exe。
 """,
-"Step 10: Avatar Masks Part 1: Masks": """
-                                                            **Description:**
-In this step, you will dump the Avatar and Animator Controller using AssetStudioGUI, and generate a list of all the Avatar Masks with all the bones enabled/disabled.
-                                                            **Instructions:**
-1. Open the client_assets.bundle and container.bundle of the weapon you are working on in AssetStudioGui.
-2. In the toolbar, filter the assets by Filter Type>Avatar and Animator Controller
-3. Select the proper Animator Controller, and Avatar, and Export>Dump>Selected Assets and choose an export directory.
-4. Run the attached script 'avatarmaskparser' script.
-5. In the GUI, select you Avatar dump, your Animator Controller dump, click the "Process dumps and generate Avatar Mask List" and choose where to export the list.
-
+            "步骤 10：头像遮罩（第 1 部分 – 遮罩）": """
+                                                            **说明：**
+此步骤使用 AssetStudioGUI 转储 Avatar 和 Animator Controller，并生成包含所有骨骼启用/禁用状态的头像遮罩列表。
+                                                            **操作：**
+1. 在 AssetStudioGUI 中打开您正在处理的武器的 client_assets.bundle 和 container.bundle。
+2. 在工具栏中，通过 Filter Type > Avatar 和 Animator Controller 过滤资源。
+3. 选择正确的 Animator Controller 和 Avatar，然后 Export > Dump > Selected Assets，选择导出目录。
+4. 运行附带的 'avatarmaskparser' 脚本。
+5. 在脚本 GUI 中，选择您的 Avatar 转储和 Animator Controller 转储，点击“处理转储并生成头像遮罩列表”，选择列表导出位置。
 """,
-
-"Step 11: Avatar Masks Part 2: Avatar": """
-
-                                                            **Description:** 
-In this step, you'll create avatar masks for each specific animation layer.
-                                                            **Instructions:**
-1. In Unity, locate the .fbx file of your model with animations and select it.
-2. In the 'Inspector' window, navigate to the 'Rig' tab.
-3. In the 'Avatar Definition' section, select 'Create From This Model' and click 'Apply'.
-4. With the avatar generated, right-click in the 'Project' window and select 'Create' > 'Avatar Mask' to create a new avatar mask.
-5. Select the newly created avatar mask in the 'Project' window.
-6. In the 'Inspector' window, under 'Transform' > 'Use Skeleton From,' drag your generated avatar from your .fbx model to the entry, and click 'Import Skeleton'.
-7. Duplicate this avatar mask for each layer needed in the Animator Controller. Be sure to enable 'IK Pass' in the 'Hands' layer. 
-8. Open the Avatar Mask List created in Step 10, and compare each Avatar Mask layer in the Animator Controller to the list. This is a very tedious process, but it will ensure your layers have the proper bones enabled/disabled for each Avatar Mask.
-
+            "步骤 11：头像遮罩（第 2 部分 – Avatar）": """
+                                                            **说明：**
+此步骤为每个动画层创建对应的头像遮罩。
+                                                            **操作：**
+1. 在 Unity 中，找到您带动画的模型 .fbx 文件并选中。
+2. 在 Inspector 窗口中，切换到 'Rig' 选项卡。
+3. 在 'Avatar Definition' 部分，选择 'Create From This Model'，点击 Apply。
+4. 生成 Avatar 后，在 Project 窗口中右键 > Create > Avatar Mask，创建新的头像遮罩。
+5. 在 Project 窗口中选择新创建的遮罩。
+6. 在 Inspector 中，在 'Transform' > 'Use Skeleton From' 处，将您生成的 Avatar 拖入，并点击 'Import Skeleton'。
+7. 为动画控制器中的每个层复制一份此遮罩。请确保在 'Hands' 层中启用 'IK Pass'。
+8. 打开步骤 10 中生成的遮罩列表，将动画控制器中每个层的遮罩与列表逐一对比，启用/禁用对应的骨骼。这个过程很繁琐，但能保证每个层的遮罩骨骼正确。
 """,
-
-"Step 12: Creating your custom weapon Prefab": """
-                                                            **Description:** 
-In this step, you'll create a custom weapon prefab in Unity. This is your actual custom model that will be used in the game.
-                                                            **Instructions:**
-1. Select your custom weapon 'working animations' .fbx file you created in Step 7. Drag it onto the Scene, right click it, and Unpack Prefab Completely.
-2. Select the Tarkov weapon model.generated and drag it onto the Scene.
-3. Compare the two models and take note of the scripts that are attached to the Tarkov gameobjects.
-4. The main game object should have Transform Links LOD Groups and Animator. The weapon_root children will have different types of scripts attached. These need to be compared gameobject-by-gameobject, and added to their match in your custom prefab.
-    - NOTE: Muzzle Fume is broken from Asset Ripper. Fortunately, there is a example in the SDK you can compare and copy the values from (thanks SamSWWAT!).
-5. Provided is a 'AutoTransformLinks.cs' editor script for Unity (located in the Tools folder of this program) that will automatically apply the transform links to your custom prefab.
-6. To use, place the AutoTransformLinks.cs in your SDK Assets/Editor folder.
-7. Select 'Tarkov Weapon Tools' from your toolbar, and select 'Transform Links Automation' to open it's GUI.
-8. In the GUI, drag your custom prefab into the Main Gameobject entry, and click 'Apply Transform Links'.
-9. Once all game objects have the correct scripts attached, drag your custom weapon prefab to the Project window. Rename the .prefab to your cusotm weapon name.
-10. Select the main Weapon Container you imported in Step 4. Clear every entry in 'Weapon Prefab' except for Weapon Object and Original Animator Controller.
-11. Select your new custom weapon prefab you just made and apply it over the Weapon Object entry in your main Weapon Container > Weapon Prefab.
+            "步骤 12：创建自定义武器预制体": """
+                                                            **说明：**
+此步骤在 Unity 中创建自定义武器预制体，这是实际在游戏中使用的自定义模型。
+                                                            **操作：**
+1. 选择您在步骤 7 中创建的自定义武器 'working animations' .fbx 文件，拖入场景，右键选择 Unpack Prefab Completely。
+2. 将塔科夫武器模型（.generated）拖入场景。
+3. 比较两个模型，注意塔科夫游戏对象上附加的脚本。
+4. 主游戏对象应有 Transform Links、LOD Groups 和 Animator。weapon_root 的子对象会有不同类型的脚本，需要逐个对比并添加到自定义预制体的对应对象上。
+   - 注意：Muzzle Fume（枪口烟雾）从 Asset Ripper 导出后是损坏的。幸运的是，SDK 中有示例，您可以参考并复制其值（感谢 SamSWAT！）。
+5. 本程序 Tools 文件夹中提供了 'AutoTransformLinks.cs' Unity 编辑器脚本，可自动将 Transform Links 应用到您的自定义预制体。
+6. 使用时，将 AutoTransformLinks.cs 放入您的 SDK Assets/Editor 文件夹。
+7. 在 Unity 工具栏中选择 'Tarkov Weapon Tools'，然后选择 'Transform Links Automation' 打开其 GUI。
+8. 在 GUI 中，将您的自定义预制体拖入 Main Gameobject 条目，点击 'Apply Transform Links'。
+9. 所有游戏对象挂载正确的脚本后，将您的自定义武器预制体拖入 Project 窗口，重命名 .prefab 为您自定义的武器名称。
+10. 选择您在步骤 4 中导入的主武器容器，清除 'Weapon Prefab' 中除 Weapon Object 和 Original Animator Controller 外的所有条目。
+11. 选择您刚制作的自定义武器预制体，将其应用到主武器容器的 Weapon Prefab > Weapon Object 条目上。
 """,
-"Step 13: Building your Custom Weapon Bundle": """
-                                                            **Description:** 
-In this step, you'll clear the asset labels and build your custom weapon bundle.
-                                                            **Instructions:**
-1. All the imported Tarkov gameobjects retain their original asset labels from Tarkov (i.e. Assets/Content/Weapons/rhino/client_assets.bundle). 
-2. There are two ways to clear the assetlabels. You can select every imported gameobject and set the Asset Label to 'None'. OR you can clear all the labels in the AssetBundleBrowser configure window, but be CAREFUL to not delete any of the SDK bundle labels, such as Shaders or Additional Hands, as these HAVE to be built in order for the PathID replacer to work.
-3. Apply a new label to the main weapon container. This will be the name of the custom weapon bundle you are building for the game.
-4. Build your new custom gun in the AssetBundleBrowser 'Build' tab, and continue on to test your weapon in the game using custom code to add it.
+            "步骤 13：构建自定义武器资源包": """
+                                                            **说明：**
+此步骤清除资源标签并构建您的自定义武器资源包。
+                                                            **操作：**
+1. 所有导入的塔科夫游戏对象都保留了原始塔科夫资源标签（如 Assets/Content/Weapons/rhino/client_assets.bundle）。
+2. 清除资源标签有两种方法：您可以逐个选中每个导入的游戏对象，将 Asset Label 设为 'None'；或者，在 AssetBundleBrowser 的配置窗口中清除所有标签，但务必小心，不要删除 SDK 中的任何 bundle 标签（如 Shaders 或 Additional Hands），因为这些必须构建，PathID 替换器才能正常工作。
+3. 为主武器容器应用一个新标签，这将是您为游戏构建的自定义武器包名称。
+4. 在 AssetBundleBrowser 的 'Build' 选项卡中构建新武器，然后通过自定义代码将其添加到游戏中，进行测试。
 
-Congratulations! You have now built your custom gun! If everything went correctly, you should be able to add it using a server mod, and test it in the game!
+恭喜！您已成功构建了自定义枪械！如果一切顺利，您可以使用服务器模组将其添加到游戏中并测试！
 """,
-"Step 13: Final Notes - Errors and Making Edits": """
+            "步骤 13：最后说明 – 错误与编辑": """
+如果您的枪械动画不正常，很可能是某个或多个头像遮罩的问题。您可以编辑这些遮罩，重新构建武器进行进一步测试。
 
-If your gun does not properly animate, the odds are it is an issue with one, or multiple Avatar Masks. You can edit these Avatar Masks, and rebuild the gun to further test your weapon.
-
-If you need to make further adjustments to the mesh, you will need to do the following:
-    1. Go back to the Working Animations .fbx file we used to make the Weapon Prefab in Step 11.
-    2. Open the .fbx file in blender, and make your edits to the mesh
-    3. Once your edits have been made, export the FBX file back into Unity. Ensure that 'Transform' > 'Apply Scaling' is set to 'FBX All,' and 'Armature' > 'Add Leaf Bones' is unchecked.
-        - IF you made edits to bone locations, you will need to repeat the .anim replacement detailed in Step 8.
-        - IF you added meshes to the bones, you will need to make new Avatar Masks
-        - You MUST remake the Custom Weapon Bundle detailed in Step 11
-""",
+如果您需要进一步调整网格，请按以下步骤操作：
+    1. 回到步骤 11 中用于制作武器预制体的工作动画 .fbx 文件。
+    2. 在 Blender 中打开该 .fbx，编辑网格。
+    3. 编辑完成后，将 FBX 导出回 Unity。确保 'Transform' > 'Apply Scaling' 设为 'FBX All'，并取消勾选 'Armature' > 'Add Leaf Bones'。
+        - 如果您修改了骨骼位置，则需要重复步骤 8 中的 .anim 替换。
+        - 如果您为骨骼添加了网格，则需要重新制作头像遮罩。
+        - 您必须重新制作步骤 11 中详细说明的自定义武器包。
+"""
         }
 
-           # Create the sidebar with step buttons
+        # ---------- 创建侧边栏 ----------
         self.create_sidebar()
 
-        # Create a textbox for displaying step instructions
+        # ---------- 主文本显示区 ----------
         self.textbox = ctk.CTkTextbox(self, width=250, state="disabled", wrap="word")
         self.textbox.grid(row=0, column=1, padx=(20, 20), pady=(20, 0), sticky="nsew")
         self.textbox.grid_rowconfigure(0, weight=1)
 
-        # Create a frame for appearance, scaling, and the "Run Attached Script" button
+        # ---------- 底部工具栏 ----------
         self.bottom_frame = ctk.CTkFrame(self)
         self.bottom_frame.grid(row=1, column=0, columnspan=2, padx=(20, 20), pady=(0, 20), sticky="nsew")
 
-        # Create appearance mode option
-        self.appearance_mode_label = ctk.CTkLabel(self.bottom_frame, text="Appearance Mode:", anchor="e")
+        self.appearance_mode_label = ctk.CTkLabel(self.bottom_frame, text="外观模式：", anchor="e")
         self.appearance_mode_label.grid(row=0, column=0, padx=(10, 20), pady=(10, 10), sticky="e")
-        self.appearance_mode_optionmenu = ctk.CTkOptionMenu(self.bottom_frame, values=["Light", "Dark", "System"], command=self.change_appearance_mode_event)
+        self.appearance_mode_optionmenu = ctk.CTkOptionMenu(self.bottom_frame, values=["亮色", "暗色", "系统"], command=self.change_appearance_mode_event)
         self.appearance_mode_optionmenu.grid(row=0, column=1, padx=(0, 20), pady=(10, 10), sticky="w")
-        self.appearance_mode_optionmenu.set("System")  # Set default value
+        self.appearance_mode_optionmenu.set("系统")
 
-        # Create UI scaling option
-        self.scaling_label = ctk.CTkLabel(self.bottom_frame, text="UI Scaling:", anchor="w")
+        self.scaling_label = ctk.CTkLabel(self.bottom_frame, text="界面缩放：", anchor="w")
         self.scaling_label.grid(row=0, column=2, padx=(0, 20), pady=(10, 10), sticky="w")
         self.scaling_optionmenu = ctk.CTkOptionMenu(self.bottom_frame, values=["80%", "90%", "100%", "110%", "120%"], command=self.change_scaling_event)
         self.scaling_optionmenu.grid(row=0, column=3, padx=(0, 20), pady=(10, 10), sticky="w")
-        self.scaling_optionmenu.set("100%")  # Set default value
+        self.scaling_optionmenu.set("100%")
 
-        # Create the "Run Attached Script" button at the bottom right
-        self.run_script_button = ctk.CTkButton(self.bottom_frame, text="Run Attached Script", fg_color="transparent", state="disabled", border_width=2, text_color=("gray10", "#DCE4EE"), command=self.run_script)
+        self.run_script_button = ctk.CTkButton(
+            self.bottom_frame,
+            text="运行关联脚本",
+            fg_color="transparent",
+            state="disabled",
+            border_width=2,
+            text_color=("gray10", "#DCE4EE"),
+            command=self.run_script
+        )
         self.run_script_button.grid(row=0, column=4, padx=(20, 10), pady=(10, 10), sticky="e")
 
-        # Adjust the grid configuration for the bottom frame
         self.bottom_frame.grid_rowconfigure(0, weight=1)
         self.bottom_frame.grid_columnconfigure(0, weight=1)
 
-        # Set the default step to Main Menu
-        self.set_step_text("Main Menu")
+        # 默认显示主菜单
+        self.set_step_text("主菜单")
 
+    # ---------- 事件处理 ----------
     def change_appearance_mode_event(self, new_appearance_mode: str):
-        ctk.set_appearance_mode(new_appearance_mode)
+        mode_map = {"亮色": "Light", "暗色": "Dark", "系统": "System"}
+        ctk.set_appearance_mode(mode_map.get(new_appearance_mode, "System"))
 
     def change_scaling_event(self, new_scaling: str):
         new_scaling_float = int(new_scaling.replace("%", "")) / 100
         ctk.set_widget_scaling(new_scaling_float)
 
+    # ---------- 创建侧边栏 ----------
     def create_sidebar(self):
-        # Create the logo label
-        self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="WeaponAIOTool", font=ctk.CTkFont(size=20, weight="bold"))
+        self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="武器 AIO 工具", font=ctk.CTkFont(size=20, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
 
-        # Create step buttons on the sidebar
-        num_steps = len(self.steps)
         for i, step_name in enumerate(self.steps.keys(), start=1):
-            button = ctk.CTkButton(self.sidebar_frame, text=step_name, command=lambda s=step_name: self.set_step_text(s))
+            button = ctk.CTkButton(
+                self.sidebar_frame,
+                text=step_name,
+                command=lambda s=step_name: self.set_step_text(s)
+            )
             button.grid(row=i, column=0, padx=20, pady=(10, 0), sticky="nsew")
             self.step_buttons.append(button)
             self.sidebar_frame.grid_rowconfigure(i, weight=1)
 
-        # Add empty space at the bottom
         self.sidebar_frame.grid_rowconfigure(len(self.steps) + 1, minsize=20)
 
+    # ---------- 设置步骤文本 ----------
     def set_step_text(self, step_name):
-        # Display step instructions and update the button state
-        step_text = self.steps.get(step_name, "Step not found")
+        step_text = self.steps.get(step_name, "未找到该步骤")
         script_path = self.get_script_path(step_name)
         self.current_step = step_name
 
-        if script_path:
+        if script_path and os.path.exists(script_path):
             self.run_script_button.configure(state="normal")
         else:
             self.run_script_button.configure(state="disabled")
 
         self.textbox.configure(state="normal")
         self.textbox.delete("0.0", "end")
-
         font = ctk.CTkFont(size=16)
         self.textbox.configure("custom", font=font, spacing1=10)
         self.textbox.insert("0.0", step_text, "custom")
-
         self.textbox.configure(state="disabled")
 
+    # ---------- 获取脚本路径（适配开发/打包） ----------
     def get_script_path(self, step):
-        # Get base path for resources
+        # 判断是否打包
         if getattr(sys, 'frozen', False):
             base_path = sys._MEIPASS
+            ext = ".exe"
         else:
             base_path = os.path.dirname(os.path.abspath(__file__))
-            
-        script_paths = {
-            "Step 1: Copy Dependencies": os.path.join(base_path, "resources", "filegrabber.exe"),
-            "Step 3: Fix GUID References": os.path.join(base_path, "resources", "scriptfix.exe"),
-            "Step 5: Handling Audio": os.path.join(base_path, "resources", "audiofix.exe"),
-            "Step 8: Fixing Animations Part 3 (Unity)": os.path.join(base_path, "resources", "animrenamereplace.exe"),
-            "Step 9: Left Hand Animations": os.path.join(base_path, "resources", "lactionsfix.exe"),
-            "Step 10: Avatar Masks Part 1: Masks": os.path.join(base_path, "resources", "avatarmaskparser.exe")
+            ext = ".py"
+
+        # 步骤名 → 脚本名（不含扩展名）
+        script_map = {
+            "步骤 1：复制依赖文件": "filegrabber",
+            "步骤 3：修复 GUID 引用": "scriptfix",
+            "步骤 5：处理音频": "audiofix",
+            "步骤 8：修复动画（第 3 部分 – Unity）": "animrenamereplace",
+            "步骤 9：左手动画": "lactionsfix",
+            "步骤 10：头像遮罩（第 1 部分 – 遮罩）": "avatarmaskparser"
         }
-        return script_paths.get(step)
+        script_name = script_map.get(step)
+        if not script_name:
+            return None
+        return os.path.join(base_path, "resources", script_name + ext)
 
-
+    # ---------- 运行关联脚本 ----------
     def run_script(self):
         def run_in_thread():
             try:
-                # Show loading state
-                self.run_script_button.configure(state="disabled", text="Launching...")
-                self.update_idletasks()  # Force UI update
-
-                # Launch the process
-                process = subprocess.Popen([script_path])
-
+                self.after(0, lambda: self.run_script_button.configure(state="disabled", text="启动中..."))
+                # 根据环境选择运行方式
+                if getattr(sys, 'frozen', False):
+                    # 打包后直接运行 .exe
+                    process = subprocess.Popen([script_path])
+                else:
+                    # 开发环境用 Python 运行 .py
+                    process = subprocess.Popen([sys.executable, script_path])
+                process.wait()
             except Exception as e:
-                # Show error in main thread
-                self.after(0, lambda: messagebox.showerror(
-                    "Script Execution Error", 
-                    f"Error running script for {self.current_step}:\n{str(e)}")
+                error_msg = str(e)
+                self.after(0, lambda err=error_msg: messagebox.showerror(
+                    "脚本执行错误",
+                    f"执行 {self.current_step} 时出错：\n{err}")
                 )
             finally:
-                # Restore button state
                 self.after(0, lambda: self.run_script_button.configure(
-                    state="normal", 
-                    text="Run Attached Script")
+                    state="normal", text="运行关联脚本")
                 )
 
         if self.current_step:
             script_path = self.get_script_path(self.current_step)
-            if script_path:
-                # Start the thread
-                threading.Thread(
-                    target=run_in_thread,
-                    daemon=True  # Allows thread to exit when main app exits
-                ).start()
+            if script_path and os.path.exists(script_path):
+                threading.Thread(target=run_in_thread, daemon=True).start()
             else:
-                messagebox.showinfo("Script Not Found", 
-                    f"No external script found for {self.current_step}.")
-
+                messagebox.showinfo("脚本未找到",
+                    f"当前步骤 {self.current_step} 没有关联的脚本。")
 
 if __name__ == "__main__":
-    # Create and run the application
     app = App()
     app.mainloop()

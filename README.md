@@ -1,3 +1,7 @@
+
+自用修改版
+
+
 Welcome to Tarkov Presents: The Weapon AIO Tool!
 
 The WTT Team proudly presents our all-in-one tool/tutorial for Escape From Tarkov advanced weapon modding! Follow our step-by-step instructions to effortlessly streamline your weapon creation workflow. This guide aims to cover almost every process, from Asset Ripper, to AssetStudioGui, to Unity, and finally to Tarkov! From weapon ripping to final testing, we've got you covered.
