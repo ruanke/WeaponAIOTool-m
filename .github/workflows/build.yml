@@ -20,7 +20,9 @@ jobs:
   build:
     name: 构建 Windows 可执行文件
     runs-on: windows-latest
-
+    # 关键：将版本号输出，供后续任务使用
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -34,20 +36,13 @@ jobs:
       - name: 安装依赖
         run: |
           python -m pip install --upgrade pip
-          if (Test-Path requirements.txt) {
-            pip install -r requirements.txt
-          } else {
-            pip install pyinstaller customtkinter
-          }
+          pip install -r requirements.txt
+          pip install pyinstaller
 
       - name: 构建主程序
         run: |
           cd _sourceCode
-          $iconArg = ""
-          if (Test-Path icon.ico) {
-            $iconArg = "--icon=icon.ico"
-          }
-          pyinstaller --onefile --windowed --name "WeaponAIOTool" --add-data "resources;resources" $iconArg weaponAIO.py
+          pyinstaller --onefile --windowed --name "WeaponAIOTool" --add-data "resources;resources" weaponAIO.py
 
       - name: 确定版本号
         id: version
@@ -59,6 +54,7 @@ jobs:
           }
           echo "version=$ver" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
+      # 关键：上传 Artifact，名称与下载时一致
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
@@ -70,10 +66,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.event.inputs.version != ''
-    permissions:
-      contents: write  # 确保有写入权限
-
     steps:
+      # 关键：下载 Artifact，名称与上传时完全一致
       - name: 下载构建产物
         uses: actions/download-artifact@v4
         with:
@@ -87,9 +81,7 @@ jobs:
           body: |
             手动触发的构建版本：${{ needs.build.outputs.version }}
             触发人：${{ github.actor }}
-            触发时间：${{ github.event.repository.updated_at }}
           files: WeaponAIOTool.exe
           prerelease: ${{ github.event.inputs.prerelease == 'true' }}
-          draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
