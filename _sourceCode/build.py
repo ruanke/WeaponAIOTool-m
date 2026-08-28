@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 import site
 
-# ---------- 动态获取 customtkinter 路径 ----------
+# ---------- dynamically get customtkinter path ----------
 def get_customtkinter_path():
     try:
         import customtkinter
@@ -15,11 +15,11 @@ def get_customtkinter_path():
             candidate = Path(sp) / "customtkinter"
             if candidate.exists():
                 return str(candidate)
-        raise RuntimeError("未找到 customtkinter，请先安装：pip install customtkinter")
+        raise RuntimeError("customtkinter not found, please install: pip install customtkinter")
 
 CUSTOMTKINTER_PATH = get_customtkinter_path()
 
-# ---------- 路径配置 ----------
+# ---------- path config ----------
 SOURCE_DIR = Path(__file__).resolve().parent
 RESOURCES_DIR = SOURCE_DIR / "resources"
 TEMP_DIR = Path.cwd() / "temp"
@@ -31,25 +31,25 @@ def should_build(py_file, exe_file):
     return py_file.stat().st_mtime > exe_file.stat().st_mtime
 
 def build_resources():
-    print("正在检查资源脚本...")
+    print("Checking resource scripts...")
     resource_files = list(RESOURCES_DIR.glob("*.py"))
     temp_resources_dir = TEMP_DIR / "resources"
     temp_resources_dir.mkdir(parents=True, exist_ok=True)
 
-    # 复制预编译的二进制文件（如 LActionReplacer.exe）
+    # copy pre-built binaries (like LActionReplacer.exe)
     binary_files = [RESOURCES_DIR / "LActionReplacer.exe"]
     for binary in binary_files:
         if binary.exists():
             shutil.copy2(binary, temp_resources_dir / binary.name)
-            print(f"已复制二进制文件: {binary.name}")
+            print(f"Copied binary: {binary.name}")
         else:
-            print(f"警告: 缺少 {binary}")
+            print(f"Warning: missing {binary}")
 
-    # 构建每个 .py 脚本为 .exe
+    # build each .py script to .exe
     for script in resource_files:
         exe_file = temp_resources_dir / (script.stem + ".exe")
         if should_build(script, exe_file):
-            print(f"正在构建 {script.name}...")
+            print(f"Building {script.name}...")
             cmd = [
                 "pyinstaller",
                 "--noconfirm",
@@ -68,16 +68,16 @@ def build_resources():
             try:
                 subprocess.run(cmd, check=True)
             except subprocess.CalledProcessError as e:
-                print(f"构建 {script.name} 失败: {e}")
+                print(f"Failed to build {script.name}: {e}")
                 raise
         else:
-            print(f"跳过 {script.name}，已是最新。")
+            print(f"Skipping {script.name}, already up to date.")
 
 def build_main_app():
-    print("正在构建主应用程序...")
+    print("Building main application...")
     temp_resources_dir = TEMP_DIR / "resources"
     if not temp_resources_dir.exists() or not any(temp_resources_dir.glob("*.exe")):
-        print("错误: 未找到辅助 EXE，请先运行 build_resources()。")
+        print("Error: auxiliary EXEs not found, run build_resources() first.")
         sys.exit(1)
 
     cmd = [
@@ -99,7 +99,7 @@ def build_main_app():
     try:
         subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError as e:
-        print(f"构建主程序失败: {e}")
+        print(f"Failed to build main app: {e}")
         raise
 
 def main():
@@ -108,7 +108,7 @@ def main():
     build_resources()
     shutil.copy(SOURCE_DIR / "weaponAIO.py", TEMP_DIR)
     build_main_app()
-    print(f"构建完成！最终 EXE 在: {FINAL_DIR}")
+    print(f"Build complete! Final EXE in: {FINAL_DIR}")
 
 if __name__ == "__main__":
     main()
